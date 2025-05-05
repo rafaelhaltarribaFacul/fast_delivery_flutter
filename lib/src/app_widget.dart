@@ -14,12 +14,27 @@ class AppWidget extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        scaffoldBackgroundColor: Colors.transparent,
+        appBarTheme: const AppBarTheme(
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          centerTitle: true,
+          titleTextStyle: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textTheme: const TextTheme(
+          bodyMedium: TextStyle(color: Colors.white),
+        ),
       ),
+
       initialRoute: AppRoutes.splash,
+
       routes: {
-        AppRoutes.splash: (_)   => SplashPage(),
-        AppRoutes.home: (_)     => HomePage(),
-        AppRoutes.history: (_)  => HistoryPage(),
+        AppRoutes.splash: (context) => const SplashPage(),
+        AppRoutes.home:   (context) => const HomePage(),
+        AppRoutes.history:(context) => HistoryPage(),
       },
     );
   }

@@ -19,12 +19,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final controller = AddressController(
-    AddressService(
-      remoteRepo: ViacepRepository(),
-      localRepo: LocalRepository(),
-    ),
-  );
+  final controller = AddressController(AddressService());
   final cepController = TextEditingController();
 
   @override
@@ -39,106 +34,138 @@ class _HomePageState extends State<HomePage> {
       if (locations.isEmpty) throw 'Localização não encontrada';
 
       final loc = locations.first;
-      final lat = loc.latitude;
-      final lng = loc.longitude;
+      final lat = loc.latitude, lng = loc.longitude;
 
       final geoUri = Uri.parse('geo:$lat,$lng?q=${Uri.encodeComponent(fullAddress)}');
-      debugPrint('Tentando abrir URI geo: $geoUri');
+      debugPrint('Tentar geo: $geoUri');
       if (await canLaunchUrl(geoUri)) {
         await launchUrl(geoUri);
         return;
       }
-
       final mapsUri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
-      debugPrint('Fazendo fallback para navegador: $mapsUri');
+      debugPrint('Fazer fallback: $mapsUri');
       if (await canLaunchUrl(mapsUri)) {
         await launchUrl(mapsUri, mode: LaunchMode.externalApplication);
         return;
       }
-
-      throw 'Não foi possível abrir o mapa em nenhuma forma';
+      throw 'Não foi possível abrir o mapa';
     } catch (e, s) {
-      debugPrint('Erro em _openMap: $e\n$s');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      debugPrint('Erro _openMap: $e\n$s');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Consulta de CEP'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
-            onPressed: () => Navigator.pushNamed(context, AppRoutes.history),
-          ),
-        ],
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF0A73FF), Color(0xFF6EA8FF)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: cepController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'CEP (apenas números)',
-                      border: OutlineInputBorder(),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Consulta de CEP'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.history),
+              onPressed: () => Navigator.pushNamed(context, AppRoutes.history),
+            ),
+          ],
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: cepController,
+                      keyboardType: TextInputType.number,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        labelText: 'CEP (apenas números)',
+                        labelStyle: const TextStyle(color: Colors.white70),
+                        border: OutlineInputBorder(
+                          borderSide: const BorderSide(color: Colors.white54),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: const BorderSide(color: Colors.white38),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () {
-                    final cep = cepController.text.trim();
-                    if (cep.isNotEmpty) {
-                      controller.fetchAddress(cep);
-                      FocusScope.of(context).unfocus();
-                    }
-                  },
-                  child: const Text('Buscar'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Observer(builder: (_) {
-              if (controller.loading) {
-                return const LoadingWidget();
-              }
-              if (controller.error != null) {
-                return shared.ErrorWidget(message: controller.error!);
-              }
-              if (controller.address != null) {
-                final a = controller.address!;
-                final fullAddress =
-                    '${a.logradouro}, ${a.bairro}, ${a.localidade} - ${a.uf}';
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('CEP: ${a.cep}', style: const TextStyle(fontSize: 16)),
-                    Text('Logradouro: ${a.logradouro}'),
-                    Text('Complemento: ${a.complemento}'),
-                    Text('Bairro: ${a.bairro}'),
-                    Text('Cidade: ${a.localidade}'),
-                    Text('UF: ${a.uf}'),
-                    const SizedBox(height: 8),
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.map),
-                      label: const Text('Traçar rota'),
-                      onPressed: () => _openMap(fullAddress),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white24,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                  ],
-                );
-              }
-              return const SizedBox.shrink();
-            }),
-          ],
+                    onPressed: () {
+                      final cep = cepController.text.trim();
+                      if (cep.isNotEmpty) {
+                        controller.fetchAddress(cep);
+                        FocusScope.of(context).unfocus();
+                      }
+                    },
+                    child: const Text('Buscar', style: TextStyle(color: Colors.white)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: Observer(builder: (_) {
+                  if (controller.loading) {
+                    return const LoadingWidget();
+                  }
+                  if (controller.error != null) {
+                    return shared.ErrorWidget(message: controller.error!);
+                  }
+                  if (controller.address != null) {
+                    final a = controller.address!;
+                    final fullAddress = '${a.logradouro}, ${a.bairro}, ${a.localidade} - ${a.uf}';
+                    return Card(
+                      color: Colors.white24,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('CEP: ${a.cep}', style: const TextStyle(fontSize: 16, color: Colors.white)),
+                            Text('Logradouro: ${a.logradouro}', style: const TextStyle(color: Colors.white70)),
+                            Text('Complemento: ${a.complemento}', style: const TextStyle(color: Colors.white70)),
+                            Text('Bairro: ${a.bairro}', style: const TextStyle(color: Colors.white70)),
+                            Text('Cidade: ${a.localidade}', style: const TextStyle(color: Colors.white70)),
+                            Text('UF: ${a.uf}', style: const TextStyle(color: Colors.white70)),
+                            const SizedBox(height: 12),
+                            Center(
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white38,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                icon: const Icon(Icons.map, color: Colors.white),
+                                label: const Text('Traçar rota', style: TextStyle(color: Colors.white)),
+                                onPressed: () => _openMap(fullAddress),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+                  return const Center(child: Text('Insira um CEP acima', style: TextStyle(color: Colors.white70)));
+                }),
+              ),
+            ],
+          ),
         ),
       ),
     );
