@@ -36,19 +36,31 @@ class _HomePageState extends State<HomePage> {
   Future<void> _openMap(String fullAddress) async {
     try {
       final locations = await locationFromAddress(fullAddress);
-      if (locations.isEmpty) return;
+      if (locations.isEmpty) throw 'Localização não encontrada';
+
       final loc = locations.first;
-      final uri = Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=${loc.latitude},${loc.longitude}',
-      );
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri);
-      } else {
-        throw 'Não foi possível abrir o mapa';
+      final lat = loc.latitude;
+      final lng = loc.longitude;
+
+      final geoUri = Uri.parse('geo:$lat,$lng?q=${Uri.encodeComponent(fullAddress)}');
+      debugPrint('Tentando abrir URI geo: $geoUri');
+      if (await canLaunchUrl(geoUri)) {
+        await launchUrl(geoUri);
+        return;
       }
-    } catch (e) {
+
+      final mapsUri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+      debugPrint('Fazendo fallback para navegador: $mapsUri');
+      if (await canLaunchUrl(mapsUri)) {
+        await launchUrl(mapsUri, mode: LaunchMode.externalApplication);
+        return;
+      }
+
+      throw 'Não foi possível abrir o mapa em nenhuma forma';
+    } catch (e, s) {
+      debugPrint('Erro em _openMap: $e\n$s');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erro ao abrir o mapa')),
+        SnackBar(content: Text(e.toString())),
       );
     }
   }

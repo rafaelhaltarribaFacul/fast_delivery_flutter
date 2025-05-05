@@ -7,7 +7,7 @@ class DioClient {
       : _dio = dio ??
             Dio(
               BaseOptions(
-                baseUrl: 'https://viacep.com.br/ws',
+                baseUrl: 'https://viacep.com.br/ws/',
                 connectTimeout: 5000,
                 receiveTimeout: 3000,
               ),

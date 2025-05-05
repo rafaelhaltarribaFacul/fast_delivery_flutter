@@ -14,6 +14,11 @@ class AddressService {
 
   Future<AddressModel> getAddress(String cep) async {
     final data = await _remoteRepo.fetchCep(cep);
+
+    if (data.containsKey('erro') && data['erro'] == true) {
+      throw Exception('CEP não encontrado');
+    }
+
     final address = AddressModel.fromJson(data);
     await _localRepo.saveAddress(address);
     return address;

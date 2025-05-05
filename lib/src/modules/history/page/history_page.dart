@@ -22,21 +22,29 @@ class HistoryPage extends StatelessWidget {
   Future<void> _openMap(BuildContext context, AddressModel address) async {
     final fullAddress =
         '${address.logradouro}, ${address.bairro}, ${address.localidade} - ${address.uf}';
+
     try {
       final locations = await locationFromAddress(fullAddress);
-      if (locations.isEmpty) return;
+      if (locations.isEmpty) throw 'Localização não encontrada';
+
       final loc = locations.first;
+      final lat = loc.latitude;
+      final lng = loc.longitude;
       final uri = Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=${loc.latitude},${loc.longitude}',
+        Uri.encodeFull('https://www.google.com/maps/search/?api=1&query=$lat,$lng'),
       );
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri);
-      } else {
+
+      if (!await canLaunchUrl(uri)) {
         throw 'Não foi possível abrir o mapa';
       }
-    } catch (_) {
+
+      await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erro ao abrir o mapa')),
+        SnackBar(content: Text(e.toString())),
       );
     }
   }
